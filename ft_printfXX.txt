@@ -1,0 +1,196 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ft_printf.h                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pharmund <pharmund@student.21-school.ru    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2021/12/13 10:55:23 by pharmund          #+#    #+#             */
+/*   Updated: 2021/12/20 00:31:07 by pharmund         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#ifndef FT_PRINTF_H
+# define FT_PRINTF_H
+
+# include <stdarg.h>
+# include <unistd.h>
+# include <stdlib.h>
+
+int		ft_printf(const char *fmt, ...);
+int		put_char(char c);
+int		put_str(char *s);
+int		put_ptr(unsigned long int n);
+int		put_nbr(int n);
+int		put_unsigned_nbr(unsigned int n);
+int		put_hex(unsigned int n, char up_low_case);
+
+void	convert_int_to_hex(unsigned long int n, int *len, char up_low_case);
+void	convert_int_to_ascii(long int long_n, int *digit_len);
+
+#endif
+
+#include "ft_printf.h"
+
+int	define_specifier(char fmt, va_list ap)
+{
+	int	len;
+
+	len = 0;
+	if (fmt == 'c')
+		len += put_char(va_arg(ap, int));
+	else if (fmt == 's')
+		len += put_str(va_arg(ap, char *));
+	else if (fmt == 'p')
+		len += put_ptr(va_arg(ap, unsigned long int));
+	else if (fmt == 'd' || fmt == 'i')
+		len += put_nbr(va_arg(ap, int));
+	else if (fmt == 'u')
+		len += put_unsigned_nbr(va_arg(ap, unsigned int));
+	else if (fmt == 'x' || fmt == 'X')
+		len += put_hex(va_arg(ap, unsigned int), fmt);
+	else if (fmt == '%')
+		len += put_char('%');
+	return (len);
+}
+
+int	find_len(const char *fmt, va_list ap)
+{
+	int	len;
+
+	len = 0;
+	while (*fmt)
+	{
+		if (*fmt == '%')
+			len += define_specifier(*++fmt, ap);
+		else
+			len += put_char(*fmt);
+		fmt ++;
+	}
+	return (len);
+}
+
+int	ft_printf(const char *fmt, ...)
+{
+	va_list	ap;
+	int		len;
+
+	va_start(ap, fmt);
+	len = find_len(fmt, ap);
+	va_end(ap);
+	return (len);
+}
+
+#include "ft_printf.h"
+
+int	put_char(char c)
+{
+	write (1, &c, 1);
+	return (1);
+}
+
+
+#include	"ft_printf.h"
+
+int	put_str(char *s)
+{
+	int	len;
+
+	if (s == NULL)
+	{
+		put_str("(null)");
+		return (6);
+	}
+	len = 0;
+	while (s[len])
+		len += put_char(s[len]);
+	return (len);
+}
+
+#include "ft_printf.h"
+
+int	put_ptr(unsigned long int n)
+{
+	int	ptr_len;
+
+	ptr_len = 0;
+	put_str("0x");
+	convert_int_to_hex(n, &ptr_len, 'a');
+	return (ptr_len + 2);
+}
+
+
+#include "ft_printf.h"
+
+int	put_hex(unsigned int n, char up_low_case)
+{
+	int	hex_len;
+
+	hex_len = 0;
+	convert_int_to_hex(n, &hex_len, up_low_case - 23);
+	return (hex_len);
+}
+
+
+#include "ft_printf.h"
+
+int	put_nbr(int n)
+{
+	int			digit_len;
+	long int	long_n;
+
+	long_n = (long int)n;
+	digit_len = 0;
+	if (long_n < 0)
+	{
+		digit_len += put_char('-');
+		long_n = -long_n;
+	}
+	convert_int_to_ascii(long_n, &digit_len);
+	return (digit_len);
+}
+
+
+#include "ft_printf.h"
+
+int	put_unsigned_nbr(unsigned int n)
+{
+	int	digit_len;
+
+	digit_len = 0;
+	convert_int_to_ascii(n, &digit_len);
+	return (digit_len);
+}
+
+#include "ft_printf.h"
+
+void	convert_int_to_hex(unsigned long int n, int *len, char up_low_case)
+{
+	if (n > 15)
+	{
+		convert_int_to_hex(n / 16, len, up_low_case);
+		convert_int_to_hex(n % 16, len, up_low_case);
+	}
+	else
+	{
+		if (n / 10)
+			put_char((n % 10) + (up_low_case));
+		else
+			put_char(n + '0');
+		*len = *len + 1;
+	}
+}
+
+void	convert_int_to_ascii(long int n, int *len)
+{
+	if (n > 9)
+	{
+		convert_int_to_ascii(n / 10, len);
+		convert_int_to_ascii(n % 10, len);
+	}
+	else
+	{
+		put_char(n + '0');
+		*len = *len + 1;
+	}
+}
